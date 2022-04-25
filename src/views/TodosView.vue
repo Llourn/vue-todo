@@ -1,164 +1,152 @@
+<template>
+  <h1>Todos</h1>
+  <form class="todo-form" @submit.prevent="handleAddTodo">
+    <label>Todo name:</label>
+    <div class="input-and-button">
+      <div class="text-input">
+        <input type="text" v-model="newTodoTitle" :maxlength="maxLength" data-test="Text Input"/>
+        <div class="remaining-characters">
+          {{ maxLength - newTodoTitle.length }}
+        </div>
+      </div>
+      <button class="icon-button" data-test="Add Button" :disabled="newTodoTitle.length === 0">
+        <i class="fa-solid fa-square-plus fa-xl"></i>
+      </button>
+    </div>
+  </form>
+  <div class="todos-container">
+    <section v-if="todos" class="todos">
+      <TodoItem
+        v-for="todo in todos"
+        :key="todo.id"
+        :todo="todo"
+        @deleteTodo="deleteTodo(todo.id)"
+        @toggleComplete="updateTodo(todo.id)"
+      />
+    </section>
+    <section v-else-if="fetchError">
+      Error fetching todos: {{ fetchError }}
+    </section>
+    <section v-else>Loading...</section>
+  </div>
+</template>
+
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
+import type { Todo } from "@/types";
+import { onMounted, ref } from "vue";
 import TodoItem from "../components/TodoItem.vue";
-import type { Todo } from "../types";
 
+const urlTodos = "http://localhost:1337/todos";
 const todos = ref<Todo[] | null>(null);
-const inputError = ref<string | null>(null);
-const getTodosError = ref<any>(null);
+const fetchError = ref(null);
+const newTodoTitle = ref<string>("");
+const maxLength = 35;
 
-const newTodo = ref("");
-
-function getTodos() {
-  fetch("http://localhost:3004/todos")
+const getTodos = async () => {
+  await fetch(urlTodos)
     .then((res) => res.json())
-    .then((json) => (todos.value = json))
-    .catch((err) => (getTodosError.value = err));
-}
+    .then((res) => {
+      todos.value = res as Todo[];
+    })
+    .catch((err) => {
+      fetchError.value = err.message;
+    });
+};
 
-function addNewTodo() {
-  if (!newTodo.value) {
-    inputError.value =
-      "Todo name cannot be left blank. Enter a name and try again.";
-  } else {
-    const freshTodo = {
-      id: getRandomId(),
-      title: newTodo.value,
-      completed: false,
-    };
-    if (todos.value && todos.value.length > 0) todos.value.push(freshTodo);
-
-    fetch("http://localhost:3004/todos", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(freshTodo),
-    }).catch((error) => console.log(error));
-    newTodo.value = "";
-  }
-}
-
-function removeTask(id: number) {
-  console.log("delete task: ", id);
-  fetch(`http://localhost:3004/todos/${id}`, {
-    method: "DELETE",
-  })
-    .then(() => getTodos())
-    .catch((error) => console.log(error));
-}
-
-function toggleComplete(id: number) {
-  const todoToUpdate = todos.value?.filter((todo) => {
-    return todo.id === id;
-  })[0];
-  if (todoToUpdate) {
-    todoToUpdate.completed = !todoToUpdate.completed;
-    fetch(`http://localhost:3004/todos/${id}`, {
+const updateTodo = async (id: number) => {
+  const targetTodo = todos.value?.find((todo) => todo.id === id);
+  if (targetTodo) {
+    targetTodo.completed = !targetTodo.completed;
+    await fetch(`${urlTodos}/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(todoToUpdate),
-    }).catch((error) => console.log(error));
+      body: JSON.stringify(targetTodo),
+    }).catch((err) => console.log(err));
   }
-}
+};
 
-function getRandomId() {
-  return Math.floor(Math.random() * 10000000000);
-}
+const addTodo = async () => {
+  const freshTodo: Todo = {
+    id: 0,
+    title: newTodoTitle.value,
+    completed: false,
+  };
 
-function clearError() {
-  inputError.value = null;
-}
+  await fetch(urlTodos, {
+    method: "POST",
+    headers: {
+      "Content-type": "application/json",
+    },
+    body: JSON.stringify(freshTodo),
+  })
+    .then(() => getTodos())
+    .catch((err) => console.log(err));
+  newTodoTitle.value = "";
+};
+
+const deleteTodo = async (id: number) => {
+  await fetch(`${urlTodos}/${id}`, {
+    method: "DELETE",
+  })
+    .then(() => getTodos())
+    .catch((err) => console.log(err));
+};
+
+const handleAddTodo = () => {
+  console.log("Add todo.");
+  addTodo();
+};
 
 onMounted(() => {
   getTodos();
 });
 </script>
 
-<template>
-  <div class="container">
-    <h1>Todo List</h1>
-    <form @submit.prevent="addNewTodo">
-      <input
-        @input="clearError"
-        v-model="newTodo"
-        placeholder="Enter name of Todo"
-      />
-      <button class="todo-button">
-        <i class="fa-solid fa-plus fa-xl"></i>
-      </button>
-    </form>
-    <Transition name="input-error">
-      <p v-if="inputError" >{{ inputError }}</p>
-    </Transition>
-    <div v-if="getTodosError">
-      Error encountered: {{ getTodosError.message }}
-    </div>
-    <div class="todo-container" v-else-if="todos">
-      <TodoItem
-        v-for="todo in todos"
-        :key="todo.id"
-        :id="todo.id"
-        :title="todo.title"
-        :completed="todo.completed"
-        @deleteTodo="removeTask(todo.id)"
-        @toggle-complete="toggleComplete(todo.id)"
-      />
-    </div>
-    <div v-else>Loading...</div>
-  </div>
-</template>
-
 <style scoped lang="scss">
-.container {
+.text-input {
   display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.todo-container {
-  margin: 1rem;
-  > :nth-child(2n + 1) {
-    background-color: rgba(0, 0, 0, 0.1);
-  }
-}
-
-.todo-button {
-  border: none;
-  background-color: transparent;
-  cursor: pointer;
   > * {
-    &:hover {
-      animation: bounce-hover 0.5s;
-      color: #c12f81;
-      transition: color 0.2s linear;
+    outline: none;
+    border-style: solid;
+    border-width: 2px;
+    border-color: var(--color-border);
+    border-radius: 3px;
+    &:first-child {
+      border-top-right-radius: 0;
+      border-bottom-right-radius: 0;
+      transition: border-color 0.1s ease-out;
+      &:focus {
+        border-color: var(--c-accent);
+      }
+    }
+    &:last-child {
+      border-left: none;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
     }
   }
 }
 
-@keyframes bounce-hover {
-  0% {
-    transform: scale(1);
-  }
-  25% {
-    transform: scale(0.75);
-  }
-  50% {
-    transform: scale(1.25);
-  }
-  100% {
-    transform: scale(1);
-  }
+.remaining-characters {
+  padding-inline: 3px;
+}
+.todo-form,
+.input-and-button {
+  display: flex;
+  column-gap: var(--content-padding);
+  flex-wrap: wrap;
 }
 
-.input-error-enter-active,
-.input-error-leave-active {
-  transition: opacity 0.5s ease;
+.todo-form,
+.todos-container {
+  padding-bottom: var(--content-padding);
 }
 
-.input-error-enter-from,
-.input-error-leave-to {
-  opacity: 0;
+.todos {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 1rem;
 }
 </style>

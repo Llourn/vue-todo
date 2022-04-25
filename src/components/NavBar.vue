@@ -1,77 +1,41 @@
-<script setup lang="ts"></script>
-
 <template>
-  <nav>
-    <div class="nav-bar">
-      <div class="nav-bar__title">
-        <i class="logo fa-solid fa-table-list fa-lg"></i>
-        <span>TODO LIST APP</span>
+  <nav class="nav-bar">
+    <div class="nav-bar__container container">
+      <div class="brand">
+        <i class="fa-solid fa-meteor fa-xl"></i>
+        <span>TODO APP</span>
       </div>
-      <div class="nav-bar__links">
-        <router-link to="/" class="link">
-          <i class="fa-solid fa-table-list"></i>
-          <span>Home</span>
-        </router-link>
-        <router-link to="/todos" class="link">
-          <i class="fa-solid fa-table-list"></i>
-          <span>Todos</span>
-        </router-link>
-        <router-link to="/about" class="link">
-          <i class="fa-solid fa-table-list"></i>
-          <span>About</span>
-        </router-link>
+      <div class="nav-links">
+        <RouterLink to="/">Home</RouterLink>
+        <RouterLink to="/todos">Todos</RouterLink>
+        <RouterLink to="/about">About</RouterLink>
       </div>
     </div>
   </nav>
 </template>
 
-<style lang="scss">
-nav {
-  background-color: whitesmoke;
-  position: fixed;
-  top: 0;
-  z-index: 99;
-  width: 100%;
+<script setup lang="ts">
+import { RouterLink } from "vue-router";
+</script>
+
+<style scoped lang="scss">
+.nav-bar {
+  background: var(--c-test);
 }
 
-.nav-bar {
-  margin: auto;
-  max-width: calc(100% - 2rem);
-  height: var(--s-nav-bar-height);
+.nav-bar__container {
   display: flex;
   align-items: center;
-  gap: 1rem;
   justify-content: space-between;
 }
 
-.nav-bar__title {
-  span {
-    padding-left: 1rem;
-    font-weight: bolder;
-  }
+.nav-links {
+  display: flex;
+  gap: 1rem;
 }
 
-.nav-bar__links {
+.brand {
   display: flex;
-  list-style: none;
-  height: 100%;
-  align-items: center;
-  li {
-    height: 100%;
-    display: flex;
-    align-items: center;
-  }
-}
-
-.link {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  height: 100%;
-  padding-inline: 10px;
-  text-decoration: none;
-  &:hover {
-    background-color: rgba(0, 0, 0, 0.115);
-  }
+  gap: 1rem;
 }
 </style>

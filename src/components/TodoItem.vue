@@ -1,81 +1,91 @@
-<script setup lang="ts">
-import { ref } from "vue";
-
-const props = defineProps<{
-  id: number;
-  title: string;
-  completed: boolean;
-}>();
-
-const isCompleted = ref(props.completed);
-</script>
-
 <template>
-  <section class="todo-item">
-    <div class="todo-item__checkbox">
-      <input type="checkbox" v-model="isCompleted" @change="$emit('toggleComplete')"/>
-    </div>
-    <p
-      class="todo-item__title"
-      :class="{ 'todo-item__title--completed': isCompleted }"
-    >
-      {{ title }}
+  <div class="todo-item">
+    <input type="checkbox" v-model="completed" @change="onCheckboxChange" data-test="Todo Checkbox" />
+    <p :class="{'finished-todo': completed}">
+      <div v-show="completed" :class="{'cross-out': completed}"></div>
+      {{ todo.title }}
     </p>
-
-    <div class="todo-item__delete">
-      <div class="todo-item__delete-button" @click="$emit(`deleteTodo`)">
-        <i class="fa-solid fa-trash fa-lg"></i>
-      </div>
+    <div>
+      <button v-if="!exploded" class="icon-button" @click="handleDelete"><i class="fa-solid fa-bomb fa-lg"></i></button>
+      <i v-else-if="exploded" class="explosion fa-solid fa-burst"></i>
     </div>
-  </section>
+  </div>
 </template>
 
-<style lang="scss">
+<script setup lang="ts">
+import type { Todo } from "@/types";
+import { ref } from "vue";
+
+const props = defineProps<{ todo: Todo }>();
+const emit = defineEmits<{
+  (event: "deleteTodo"): void;
+  (event: "toggleComplete"): void;
+}>();
+
+const completed = ref(props.todo.completed);
+const exploded = ref(false);
+
+const onCheckboxChange = () => {
+  emit("toggleComplete");
+};
+
+const handleDelete = () => {
+  exploded.value = true;
+
+  setTimeout(() => {
+    emit("deleteTodo");
+  }, 300);
+}
+</script>
+
+<style scoped lang="scss">
 .todo-item {
   display: flex;
-  gap: 1rem;
-  max-width: 60ch;
-  padding-inline: 2ch;
-  padding-block: 1ch;
-  // >* {
-  //   display: flex;
-  //   align-items: center;
-  // }
+  gap: var(--content-padding);
+  align-items: center;
 }
 
-.todo-item__title {
-  flex-grow: 2;
+.finished-todo {
+  transition: color .2s ease-out;
+  color: grey;
 }
 
-.todo-item__title--completed {
-  text-decoration: line-through;
+.cross-out {
+  position: absolute;
+  top: 54%;
+  height: 2px;
+  background-color: var(--color-text);
+  animation: crossOut .2s ease-out;
+  animation-fill-mode: forwards;
 }
 
-.todo-item__checkbox {
-  accent-color: var(--color-text);
+.explosion {
+  color: red;
+  animation: boom .3s linear;
+  animation-fill-mode: forwards;
 }
 
-.todo-item__delete-button {
-  cursor: pointer;
-  &:hover {
-    animation: bounce-hover 0.5s;
-    color: #c12f81;
-    transition: color 0.2s linear;
-  }
-}
-
-@keyframes bounce-hover {
+@keyframes crossOut {
   0% {
-    transform: scale(1);
-  }
-  25% {
-    transform: scale(0.75);
-  }
-  50% {
-    transform: scale(1.25);
+    width: 0%;
   }
   100% {
-    transform: scale(1);
+    width: 100%;
+  }
+}
+
+@keyframes boom {
+  0% {
+    transform: scale(.5) rotate(0);
+    color: yellow;
+  }
+  75% {
+    transform: scale(1.5) rotate(45deg);
+    color: orange;
+  }
+  100% {
+    transform: scale(0) rotate(90deg);
+    color: red;
   }
 }
 </style>

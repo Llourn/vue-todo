@@ -1,19 +1,24 @@
 <script setup lang="ts">
-import NavBar from "./components/NavBar.vue";
 import { RouterView } from "vue-router";
+import NavBar from "./components/NavBar.vue";
+import Footer from "./components/Footer.vue";
 </script>
 
 <template>
-  <NavBar />
-  <div class="views">
+  <header>
+    <div class="wrapper">
+      <NavBar />
+    </div>
+  </header>
+
+  <main class="container">
     <RouterView />
-  </div>
+  </main>
+
+  <Footer />
 </template>
 
 <style lang="scss">
-@import "./assets/base.css";
-
-.views {
-  margin-top: var(--s-nav-bar-height);
-}
+@use "@/styles/base.scss";
+@use "@/styles/general.scss";
 </style>
